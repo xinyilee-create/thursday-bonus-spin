@@ -1,0 +1,346 @@
+:root {
+  --bg: #070b1a;
+  --panel: rgba(11, 19, 39, 0.9);
+  --panel-soft: rgba(16, 27, 53, 0.82);
+  --line: rgba(115, 220, 255, 0.16);
+  --ink: #f5fbff;
+  --muted: #91a4cb;
+  --cyan: #6fe7ff;
+  --mint: #7affbf;
+  --gold: #ffd76a;
+  --pink: #ff71c7;
+  --shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(111, 231, 255, 0.18), transparent 26%),
+    radial-gradient(circle at 86% 10%, rgba(255, 113, 199, 0.14), transparent 24%),
+    linear-gradient(180deg, #050814 0%, #090f20 46%, #050912 100%);
+}
+
+button {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.machine,
+.hud-card,
+.reel,
+.status-panel {
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  box-shadow: var(--shadow);
+}
+
+.machine {
+  width: min(760px, 100%);
+  border-radius: 36px;
+  padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(18, 32, 61, 0.94), rgba(10, 17, 35, 0.96)),
+    var(--panel);
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: var(--cyan);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 8vw, 4.4rem);
+  line-height: 0.95;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.subtitle,
+.rules,
+#statusText {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.player-panel,
+.leaderboard-panel {
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.player-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.game-area.is-hidden {
+  display: none;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+.name-field span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.name-field input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px 15px;
+  color: var(--ink);
+  background: rgba(6, 11, 24, 0.88);
+  outline: none;
+}
+
+.name-field input:focus {
+  border-color: rgba(111, 231, 255, 0.44);
+  box-shadow: 0 0 0 4px rgba(111, 231, 255, 0.08);
+}
+
+.hud-card {
+  border-radius: 22px;
+  padding: 16px;
+}
+
+.hud-card span {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.hud-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 1.5rem;
+}
+
+.jackpot-card strong {
+  color: var(--gold);
+}
+
+.reels-frame {
+  position: relative;
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, rgba(5, 12, 24, 0.96), rgba(9, 16, 33, 0.92));
+  overflow: hidden;
+}
+
+.reels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.reel {
+  min-height: 180px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(180deg, rgba(101, 242, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(7, 13, 27, 0.96);
+}
+
+.reel .symbol {
+  font-size: clamp(3rem, 12vw, 5rem);
+  filter: drop-shadow(0 0 18px rgba(111, 231, 255, 0.2));
+}
+
+.reel.is-spinning .symbol {
+  animation: blur-spin 0.18s linear infinite;
+}
+
+.reel.is-winning {
+  border-color: rgba(255, 215, 106, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(255, 215, 106, 0.1),
+    0 0 24px rgba(255, 215, 106, 0.24);
+}
+
+.payline {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, transparent, rgba(122, 255, 191, 0.7), transparent);
+  border-radius: 999px;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  margin-top: 20px;
+  align-items: center;
+}
+
+.ghost-button,
+.spin-button {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.ghost-button:hover,
+.spin-button:hover {
+  transform: translateY(-1px);
+}
+
+.ghost-button {
+  padding: 14px 18px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--line);
+}
+
+.spin-button {
+  padding: 16px 30px;
+  color: #081119;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, var(--mint), var(--cyan));
+}
+
+.spin-button:disabled,
+.ghost-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.status-panel {
+  margin-top: 18px;
+  border-radius: 24px;
+  padding: 18px;
+}
+
+.leaderboard-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.leaderboard-list {
+  margin: 14px 0 0;
+  padding-left: 22px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.leaderboard-list li + li {
+  margin-top: 6px;
+}
+
+.leaderboard-list strong {
+  color: var(--ink);
+}
+
+#statusText {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.rules {
+  margin: 12px 0 0;
+  padding-left: 18px;
+}
+
+@keyframes blur-spin {
+  0% {
+    transform: translateY(-4px) scale(1.01);
+    filter: blur(1px);
+  }
+  50% {
+    transform: translateY(4px) scale(0.99);
+    filter: blur(3px);
+  }
+  100% {
+    transform: translateY(-4px) scale(1.01);
+    filter: blur(1px);
+  }
+}
+
+@media (max-width: 760px) {
+  .hud,
+  .controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .player-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .spin-button {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 540px) {
+  .app-shell {
+    padding: 12px;
+  }
+
+  .machine {
+    padding: 18px;
+    border-radius: 28px;
+  }
+
+  .hud,
+  .controls,
+  .reels {
+    grid-template-columns: 1fr;
+  }
+
+  .reel {
+    min-height: 130px;
+  }
+}

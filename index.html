@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>週四加菜賽</title>
+    <meta name="description" content="公司活動用的拉霸小遊戲，需先輸入 Circle email 才能開始。" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="machine">
+        <div class="machine-top">
+          <p class="eyebrow">Thursday Bonus Spin</p>
+          <h1>週四加菜賽</h1>
+        </div>
+
+        <section class="player-panel" id="gatePanel">
+          <label class="name-field">
+            <span>Circle Email</span>
+            <input id="playerEmail" type="email" maxlength="80" placeholder="name@circle.com" />
+          </label>
+          <button class="ghost-button" id="startButton" type="button">報到並開始</button>
+        </section>
+
+        <div class="game-area is-hidden" id="gameArea">
+          <section class="hud">
+            <article class="hud-card">
+              <span>Coins</span>
+              <strong id="coinsValue">0</strong>
+            </article>
+            <article class="hud-card">
+              <span>Spins Left</span>
+              <strong id="spinsLeftValue">10</strong>
+            </article>
+            <article class="hud-card jackpot-card">
+              <span>Last Win</span>
+              <strong id="winValue">0</strong>
+            </article>
+          </section>
+
+          <section class="reels-frame">
+            <div class="reels" id="reels">
+              <article class="reel is-idle"><span class="symbol">🍒</span></article>
+              <article class="reel is-idle"><span class="symbol">💎</span></article>
+              <article class="reel is-idle"><span class="symbol">⭐</span></article>
+            </div>
+            <div class="payline"></div>
+          </section>
+
+          <section class="controls">
+            <button class="spin-button" id="spinButton" type="button">SPIN</button>
+            <button class="ghost-button" id="resetButton" type="button">Reset</button>
+          </section>
+
+          <section class="status-panel">
+            <p id="statusText">報到完成後，按下 SPIN 試試手氣。</p>
+            <ul class="rules">
+              <li>每次按下 SPIN 就消耗 1 次機會</li>
+              <li>起始分數為 0 分</li>
+              <li>三個相同圖示：80 分</li>
+              <li>兩個相同 + 一個星星：40 分</li>
+              <li>兩個相同圖示：20 分</li>
+              <li>三個星星：500 分</li>
+            </ul>
+          </section>
+        </div>
+
+        <section class="leaderboard-panel">
+          <div class="leaderboard-heading">
+            <p class="eyebrow">Top 3</p>
+            <h2>排行榜</h2>
+          </div>
+          <ol class="leaderboard-list" id="leaderboardList"></ol>
+        </section>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
