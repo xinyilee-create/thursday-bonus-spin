@@ -1,8 +1,8 @@
 const SYMBOLS = ["🍒", "🍋", "🔔", "💎", "7", "⭐"];
 const STARTING_COINS = 0;
 const JACKPOT = 500;
-const LEADERBOARD_KEY = "neon-slot-leaderboard-v4";
-const ATTEMPT_KEY = "thursday-bonus-spin-attempts-v4";
+const LEADERBOARD_KEY = "neon-slot-leaderboard-v5";
+const ATTEMPT_KEY = "thursday-bonus-spin-attempts-v5";
 const MAX_SPINS = 10;
 
 const state = {
