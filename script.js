@@ -3,7 +3,6 @@ const STARTING_COINS = 0;
 const JACKPOT = 500;
 const LEADERBOARD_KEY = "neon-slot-leaderboard-v4";
 const ATTEMPT_KEY = "thursday-bonus-spin-attempts-v4";
-const EMAIL_REGEX = /^[A-Z0-9._%+-]+@(?:circle\.com|contractor\.circle\.com)$/i;
 const MAX_SPINS = 10;
 
 const state = {
@@ -40,14 +39,14 @@ renderLeaderboard();
 toggleControls();
 
 function startGame() {
-  const email = refs.playerEmail.value.trim();
-  if (!EMAIL_REGEX.test(email)) {
-    refs.statusText.textContent = "請輸入有效的 Circle email，例如 name@circle.com。";
+  const playerName = refs.playerEmail.value.trim();
+  if (!playerName) {
+    refs.statusText.textContent = "請先輸入 Xinyi 能辨識的名字。";
     refs.playerEmail.focus();
     return;
   }
 
-  state.playerEmail = email.toLowerCase();
+  state.playerEmail = playerName;
   ensureParticipant(state.playerEmail);
   state.spinsUsed = getAttempts(state.playerEmail);
   state.isStarted = true;
@@ -58,7 +57,6 @@ function startGame() {
       ? `${state.playerEmail} 已用完 10 次機會。`
       : `${state.playerEmail}，你還有 ${MAX_SPINS - state.spinsUsed} 次機會。`;
   playClickSound();
-  openGoogleCalendarInvite(state.playerEmail);
   renderHud();
   renderLeaderboard();
   toggleControls();
@@ -67,7 +65,7 @@ function startGame() {
 async function spin() {
   if (state.isSpinning || !state.isStarted) {
     if (!state.isStarted) {
-      refs.statusText.textContent = "請先輸入 Circle email 並按報到並開始。";
+      refs.statusText.textContent = "請先輸入名字並按報到並開始。";
     }
     return;
   }
@@ -228,7 +226,7 @@ function resetGame() {
   refs.gatePanel.classList.remove("is-hidden");
   refs.gameArea.classList.add("is-hidden");
   clearWinningState();
-  refs.statusText.textContent = "已重置，請輸入 Circle email 重新開始。";
+  refs.statusText.textContent = "已重置，請輸入名字重新開始。";
 
   const defaultSymbols = ["🍒", "💎", "⭐"];
   refs.reels.forEach((reel, index) => renderReelSymbol(reel, defaultSymbols[index]));
@@ -305,7 +303,11 @@ function finalizeRun(message) {
 function loadLeaderboard() {
   try {
     const saved = localStorage.getItem(LEADERBOARD_KEY);
-    return saved ? JSON.parse(saved) : [];
+    const parsed = saved ? JSON.parse(saved) : [];
+    return parsed.map((entry) => ({
+      ...entry,
+      registeredAt: entry.registeredAt || entry.achievedAt || Date.now(),
+    }));
   } catch (error) {
     return [];
   }
@@ -326,7 +328,7 @@ function saveScore(name, score) {
       existing.achievedAt = now;
     }
   } else {
-    leaderboard.push({ name, score, achievedAt: now });
+    leaderboard.push({ name, score, achievedAt: now, registeredAt: now });
   }
 
   const next = leaderboard.sort((a, b) => {
@@ -348,7 +350,8 @@ function ensureParticipant(name) {
   const existing = leaderboard.find((entry) => entry.name === name);
 
   if (!existing) {
-    leaderboard.push({ name, score: 0, achievedAt: Date.now() });
+    const now = Date.now();
+    leaderboard.push({ name, score: 0, achievedAt: now, registeredAt: now });
     localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard));
   }
 }
@@ -368,14 +371,6 @@ function renderLeaderboard() {
     item.innerHTML = `<strong>${entry.name}</strong>${crown} - ${entry.score} coins`;
     refs.leaderboardList.appendChild(item);
   });
-}
-
-function openGoogleCalendarInvite(email) {
-  const details = encodeURIComponent(`玩家 ${email} 已報到週四加菜賽。`);
-  const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-    "Anchor Day Lunch Time"
-  )}&dates=20260326T120000/20260326T130000&ctz=Asia/Taipei&details=${details}`;
-  window.open(calendarUrl, "_blank", "noopener,noreferrer");
 }
 
 function loadAttempts() {

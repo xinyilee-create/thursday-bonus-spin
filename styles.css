@@ -284,6 +284,52 @@ h2 {
   color: var(--ink);
 }
 
+.admin-shell {
+  width: min(980px, 100%);
+}
+
+.admin-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
+.admin-panel {
+  margin-top: 24px;
+}
+
+.admin-count {
+  color: var(--gold);
+  font-size: 1rem;
+}
+
+.table-wrap {
+  margin-top: 18px;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.admin-table th {
+  color: var(--cyan);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.admin-table td {
+  color: var(--muted);
+}
+
 #statusText {
   margin: 0;
   font-size: 1rem;
