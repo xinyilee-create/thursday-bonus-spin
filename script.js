@@ -1,8 +1,4 @@
-const SYMBOLS = ["🍒", "🍋", "🔔", "💎", "7", "⭐"];
 const STARTING_COINS = 0;
-const JACKPOT = 500;
-const LEADERBOARD_KEY = "neon-slot-leaderboard-v5";
-const ATTEMPT_KEY = "thursday-bonus-spin-attempts-v5";
 const MAX_SPINS = 10;
 
 const state = {
@@ -10,9 +6,9 @@ const state = {
   lastWin: 0,
   isSpinning: false,
   isStarted: false,
-  playerEmail: "",
-  bestCoins: STARTING_COINS,
+  playerName: "",
   spinsUsed: 0,
+  leaderboard: [],
 };
 
 const refs = {
@@ -34,11 +30,17 @@ refs.startButton.addEventListener("click", startGame);
 refs.spinButton.addEventListener("click", spin);
 refs.resetButton.addEventListener("click", resetGame);
 
-renderHud();
-renderLeaderboard();
-toggleControls();
+boot();
 
-function startGame() {
+async function boot() {
+  renderHud();
+  toggleControls();
+  renderLeaderboard([]);
+  renderDefaultReels();
+  await refreshLeaderboard();
+}
+
+async function startGame() {
   const playerName = refs.playerEmail.value.trim();
   if (!playerName) {
     refs.statusText.textContent = "請先輸入 Xinyi 能辨識的名字。";
@@ -46,20 +48,38 @@ function startGame() {
     return;
   }
 
-  state.playerEmail = playerName;
-  ensureParticipant(state.playerEmail);
-  state.spinsUsed = getAttempts(state.playerEmail);
-  state.isStarted = true;
-  refs.gatePanel.classList.add("is-hidden");
-  refs.gameArea.classList.remove("is-hidden");
-  refs.statusText.textContent =
-    state.spinsUsed >= MAX_SPINS
-      ? `${state.playerEmail} 已用完 10 次機會。`
-      : `${state.playerEmail}，你還有 ${MAX_SPINS - state.spinsUsed} 次機會。`;
-  playClickSound();
-  renderHud();
-  renderLeaderboard();
-  toggleControls();
+  refs.startButton.disabled = true;
+  refs.statusText.textContent = "報到中...";
+
+  try {
+    const data = await apiRequest("/api/register", {
+      method: "POST",
+      body: JSON.stringify({ name: playerName }),
+    });
+
+    state.playerName = data.player.name;
+    state.coins = data.player.score;
+    state.spinsUsed = data.player.spinsUsed;
+    state.lastWin = 0;
+    state.isStarted = true;
+    state.leaderboard = data.leaderboard;
+
+    refs.gatePanel.classList.add("is-hidden");
+    refs.gameArea.classList.remove("is-hidden");
+
+    refs.statusText.textContent =
+      state.spinsUsed >= MAX_SPINS
+        ? `${state.playerName} 已用完 10 次機會。`
+        : `${state.playerName}，你還有 ${MAX_SPINS - state.spinsUsed} 次機會。`;
+
+    playClickSound();
+    renderHud();
+    renderLeaderboard(state.leaderboard);
+    toggleControls();
+  } catch (error) {
+    refs.statusText.textContent = "報到失敗，請稍後再試。";
+    refs.startButton.disabled = false;
+  }
 }
 
 async function spin() {
@@ -77,31 +97,41 @@ async function spin() {
 
   state.isSpinning = true;
   playClickSound();
-  state.spinsUsed += 1;
-  setAttempts(state.playerEmail, state.spinsUsed);
   state.lastWin = 0;
   clearWinningState();
   renderHud();
   toggleControls();
-
   refs.statusText.textContent = "訊號解碼中...";
 
-  const targetResults = rollSpinResult();
-  const results = [];
-  for (let index = 0; index < refs.reels.length; index += 1) {
-    const result = await spinReel(refs.reels[index], 700 + index * 220, targetResults[index]);
-    results.push(result);
-  }
+  try {
+    const data = await apiRequest("/api/spin", {
+      method: "POST",
+      body: JSON.stringify({ name: state.playerName }),
+    });
 
-  const outcome = evaluateSpin(results);
-  applyOutcome(outcome);
+    const results = data.results || [];
+    for (let index = 0; index < refs.reels.length; index += 1) {
+      await spinReel(refs.reels[index], 700 + index * 220, results[index]);
+    }
 
-  state.isSpinning = false;
-  toggleControls();
-  renderHud();
+    state.coins = data.player.score;
+    state.spinsUsed = data.player.spinsUsed;
+    state.lastWin = data.outcome.win;
+    state.leaderboard = data.leaderboard;
 
-  if (state.spinsUsed >= MAX_SPINS) {
-    finalizeRun("10 次拉霸機會已用完，本局結束。");
+    applyOutcome(data.outcome);
+    renderHud();
+    renderLeaderboard(state.leaderboard);
+
+    if (state.spinsUsed >= MAX_SPINS) {
+      finalizeRun("10 次拉霸機會已用完，本局結束。");
+      return;
+    }
+  } catch (error) {
+    refs.statusText.textContent = "拉霸失敗，請稍後再試。";
+  } finally {
+    state.isSpinning = false;
+    toggleControls();
   }
 }
 
@@ -111,76 +141,24 @@ function spinReel(reel, duration, finalSymbol) {
     reel.classList.add("is-spinning");
 
     const symbolNode = reel.querySelector(".symbol");
+    const symbols = ["🍒", "🍋", "🔔", "💎", "7", "⭐"];
     const interval = setInterval(() => {
-      symbolNode.textContent = randomSymbol();
+      symbolNode.textContent = symbols[Math.floor(Math.random() * symbols.length)];
     }, 90);
 
     setTimeout(() => {
       clearInterval(interval);
       symbolNode.textContent = finalSymbol;
-      reel.dataset.symbol = finalSymbol;
       reel.classList.remove("is-spinning");
       resolve(finalSymbol);
     }, duration);
   });
 }
 
-function evaluateSpin(results) {
-  const stars = results.filter((item) => item === "⭐").length;
-  const counts = results.reduce((map, symbol) => {
-    map[symbol] = (map[symbol] || 0) + 1;
-    return map;
-  }, {});
-
-  if (stars === 3) {
-    return {
-      win: JACKPOT,
-      message: "JACKPOT! 三顆星星全中！",
-      winningSymbols: ["⭐"],
-    };
-  }
-
-  const pureMatch = Object.entries(counts).find(([symbol, count]) => symbol !== "⭐" && count === 3);
-  if (pureMatch) {
-    return {
-      win: 80,
-      message: `${pureMatch[0]} 三連線，中獎 80 金幣！`,
-      winningSymbols: [pureMatch[0]],
-    };
-  }
-
-  const twoPlusStar = Object.entries(counts).find(([symbol, count]) => symbol !== "⭐" && count === 2 && stars === 1);
-  if (twoPlusStar) {
-    return {
-      win: 40,
-      message: `星星補位成功，中獎 40 金幣！`,
-      winningSymbols: [twoPlusStar[0], "⭐"],
-    };
-  }
-
-  const plainPair = Object.entries(counts).find(([symbol, count]) => symbol !== "⭐" && count === 2 && stars === 0);
-  if (plainPair) {
-    return {
-      win: 20,
-      message: `${plainPair[0]} 兩個相同，中獎 20 金幣！`,
-      winningSymbols: [plainPair[0]],
-    };
-  }
-
-  return {
-    win: 0,
-    message: "這次沒有連線，再試一次。",
-    winningSymbols: [],
-  };
-}
-
 function applyOutcome(outcome) {
-  state.lastWin = outcome.win;
-  state.coins += outcome.win;
-  state.bestCoins = Math.max(state.bestCoins, state.coins);
   const left = MAX_SPINS - state.spinsUsed;
   refs.statusText.textContent = left > 0 ? `${outcome.message} 還剩 ${left} 次機會。` : `${outcome.message} 10 次機會已用完。`;
-  playOutcomeSound(outcome.win > 0, outcome.win >= JACKPOT);
+  playOutcomeSound(outcome.win > 0, outcome.win >= 500);
 
   if (outcome.winningSymbols.length) {
     refs.reels.forEach((reel) => {
@@ -201,10 +179,18 @@ function renderHud() {
 function toggleControls() {
   refs.spinButton.disabled = state.isSpinning || !state.isStarted || state.spinsUsed >= MAX_SPINS;
   refs.resetButton.disabled = state.isSpinning;
+  refs.startButton.disabled = state.isSpinning;
 }
 
 function clearWinningState() {
   refs.reels.forEach((reel) => reel.classList.remove("is-winning"));
+}
+
+function renderDefaultReels() {
+  const defaultSymbols = ["🍒", "💎", "⭐"];
+  refs.reels.forEach((reel, index) => {
+    reel.querySelector(".symbol").textContent = defaultSymbols[index];
+  });
 }
 
 function resetGame() {
@@ -212,152 +198,41 @@ function resetGame() {
     return;
   }
 
-  if (state.isStarted && state.playerEmail) {
-    saveScore(state.playerEmail, state.bestCoins);
-  }
-
   state.coins = STARTING_COINS;
   state.lastWin = 0;
-  state.bestCoins = STARTING_COINS;
   state.isStarted = false;
   state.spinsUsed = 0;
-  state.playerEmail = "";
+  state.playerName = "";
   refs.playerEmail.value = "";
   refs.gatePanel.classList.remove("is-hidden");
   refs.gameArea.classList.add("is-hidden");
   clearWinningState();
+  renderDefaultReels();
   refs.statusText.textContent = "已重置，請輸入名字重新開始。";
-
-  const defaultSymbols = ["🍒", "💎", "⭐"];
-  refs.reels.forEach((reel, index) => renderReelSymbol(reel, defaultSymbols[index]));
-
   renderHud();
-  renderLeaderboard();
+  renderLeaderboard(state.leaderboard);
   toggleControls();
 }
 
-function randomSymbol() {
-  return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-}
-
-function renderReelSymbol(reel, symbol) {
-  reel.dataset.symbol = symbol;
-  reel.querySelector(".symbol").textContent = symbol;
-}
-
-function randomNonStarSymbol() {
-  const pool = SYMBOLS.filter((symbol) => symbol !== "⭐");
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function randomDifferentNonStarSymbol(excluded) {
-  const pool = SYMBOLS.filter((symbol) => symbol !== "⭐" && symbol !== excluded);
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function shuffle(items) {
-  const list = [...items];
-  for (let index = list.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [list[index], list[swapIndex]] = [list[swapIndex], list[index]];
-  }
-  return list;
-}
-
-function rollSpinResult() {
-  const roll = Math.random();
-
-  if (roll < 0.04) {
-    return ["⭐", "⭐", "⭐"];
-  }
-
-  if (roll < 0.2) {
-    const symbol = randomNonStarSymbol();
-    return [symbol, symbol, symbol];
-  }
-
-  if (roll < 0.45) {
-    const symbol = randomNonStarSymbol();
-    return shuffle([symbol, symbol, "⭐"]);
-  }
-
-  if (roll < 0.75) {
-    const symbol = randomNonStarSymbol();
-    const other = randomDifferentNonStarSymbol(symbol);
-    return shuffle([symbol, symbol, other]);
-  }
-
-  return [randomSymbol(), randomSymbol(), randomSymbol()];
-}
-
 function finalizeRun(message) {
-  saveScore(state.playerEmail, state.bestCoins);
   state.isStarted = false;
   refs.gameArea.classList.add("is-hidden");
   refs.gatePanel.classList.remove("is-hidden");
   refs.statusText.textContent = message;
-  renderLeaderboard();
   toggleControls();
 }
 
-function loadLeaderboard() {
+async function refreshLeaderboard() {
   try {
-    const saved = localStorage.getItem(LEADERBOARD_KEY);
-    const parsed = saved ? JSON.parse(saved) : [];
-    return parsed.map((entry) => ({
-      ...entry,
-      registeredAt: entry.registeredAt || entry.achievedAt || Date.now(),
-    }));
+    const data = await apiRequest("/api/leaderboard");
+    state.leaderboard = data.leaderboard || [];
+    renderLeaderboard(state.leaderboard);
   } catch (error) {
-    return [];
+    refs.leaderboardList.innerHTML = "<li>排行榜暫時讀取失敗。</li>";
   }
 }
 
-function saveScore(name, score) {
-  if (!name) {
-    return;
-  }
-
-  const now = Date.now();
-  const leaderboard = loadLeaderboard();
-  const existing = leaderboard.find((entry) => entry.name === name);
-
-  if (existing) {
-    if (score > existing.score) {
-      existing.score = score;
-      existing.achievedAt = now;
-    }
-  } else {
-    leaderboard.push({ name, score, achievedAt: now, registeredAt: now });
-  }
-
-  const next = leaderboard.sort((a, b) => {
-    if (b.score !== a.score) {
-      return b.score - a.score;
-    }
-    return (a.achievedAt || 0) - (b.achievedAt || 0);
-  });
-
-  localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(next));
-}
-
-function ensureParticipant(name) {
-  if (!name) {
-    return;
-  }
-
-  const leaderboard = loadLeaderboard();
-  const existing = leaderboard.find((entry) => entry.name === name);
-
-  if (!existing) {
-    const now = Date.now();
-    leaderboard.push({ name, score: 0, achievedAt: now, registeredAt: now });
-    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboard));
-  }
-}
-
-function renderLeaderboard() {
-  const leaderboard = loadLeaderboard();
+function renderLeaderboard(leaderboard) {
   refs.leaderboardList.innerHTML = "";
 
   if (!leaderboard.length) {
@@ -368,29 +243,34 @@ function renderLeaderboard() {
   leaderboard.forEach((entry, index) => {
     const item = document.createElement("li");
     const crown = index < 3 ? " 👑" : "";
-    item.innerHTML = `<strong>${entry.name}</strong>${crown} - ${entry.score} coins`;
+    item.innerHTML = `<strong>${escapeHtml(entry.name)}</strong>${crown} - ${entry.score} coins`;
     refs.leaderboardList.appendChild(item);
   });
 }
 
-function loadAttempts() {
-  try {
-    const saved = localStorage.getItem(ATTEMPT_KEY);
-    return saved ? JSON.parse(saved) : {};
-  } catch (error) {
-    return {};
+async function apiRequest(url, options = {}) {
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
   }
+
+  return response.json();
 }
 
-function getAttempts(email) {
-  const attempts = loadAttempts();
-  return attempts[email] || 0;
-}
-
-function setAttempts(email, count) {
-  const attempts = loadAttempts();
-  attempts[email] = count;
-  localStorage.setItem(ATTEMPT_KEY, JSON.stringify(attempts));
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function playClickSound() {

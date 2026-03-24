@@ -1,0 +1,13 @@
+{
+  "name": "anchor-day-bonus-spin",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Anchor Day加菜賽 with shared PostgreSQL leaderboard",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pg": "^8.13.3"
+  }
+}

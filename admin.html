@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anchor Day加菜賽後台</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="machine admin-shell">
+        <div class="machine-top">
+          <p class="eyebrow">Admin View</p>
+          <h1>Anchor Day加菜賽後台</h1>
+          <p class="admin-note">依據登入時間排序，可用來統計參與人數。</p>
+        </div>
+
+        <section class="leaderboard-panel admin-panel">
+          <div class="leaderboard-heading">
+            <div>
+              <p class="eyebrow">Participants</p>
+              <h2>參加名單</h2>
+            </div>
+            <strong class="admin-count" id="participantCount">0 人</strong>
+          </div>
+
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>排序</th>
+                  <th>登記名字</th>
+                  <th>分數</th>
+                </tr>
+              </thead>
+              <tbody id="adminRows">
+                <tr>
+                  <td colspan="3">目前還沒有資料。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="admin.js"></script>
+  </body>
+</html>
